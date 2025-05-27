@@ -500,7 +500,8 @@ class FeesManager:
             else:
                 print("No fee records found!")
                 
-        except Error as e:            print(f"✗ Error viewing members with fees: {e}")
+        except Error as e:
+            print(f"✗ Error viewing members with fees: {e}")
     
     def view_my_fees(self):
         """View fees for the logged-in member"""
