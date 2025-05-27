@@ -9,8 +9,10 @@ from mysql.connector import Error
 from tabulate import tabulate
 
 class AdvancedReports:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager, user_type=None, current_org_id=None):
         self.db = db_manager
+        self.user_type = user_type
+        self.current_org_id = current_org_id
     
     def advanced_reports_menu(self):
         """Advanced reports menu with all 10 reporting features"""
@@ -76,11 +78,11 @@ class AdvancedReports:
             status_filter = input("Status (e.g., Active, Inactive): ")
             gender_filter = input("Gender (M/F): ")
             degprog_filter = input("Degree Program: ")
-            batch_filter = input("Batch Year: ")
+            batch_filter = input("Batch Year: ")            
             committee_filter = input("Committee: ")
             
             # Build dynamic query
-            base_query = """SELECT m.student_number, m.name, m.gender, m.batch, m.degprog,
+            base_query = """SELECT m.student_number, m.name, m.username, m.gender, m.batch, m.degprog,
                                   j.role, j.status, j.committee, j.year, j.semester
                            FROM member m
                            JOIN joins j ON m.student_number = j.student_number
@@ -113,7 +115,7 @@ class AdvancedReports:
             results = self.db.cursor.fetchall()
             
             if results:
-                headers = ["Student No.", "Name", "Gender", "Batch", "Degree Program", 
+                headers = ["Student No.", "Name", "Username", "Gender", "Batch", "Degree Program", 
                           "Role", "Status", "Committee", "Year", "Semester"]
                 print(f"\nMembers of Organization {org_id} (Filtered Results):")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
@@ -141,8 +143,7 @@ class AdvancedReports:
             org_id = int(input("Organization ID: "))
             year = int(input("Academic Year: "))
             semester = int(input("Semester (1 or 2): "))
-            
-            query = """SELECT m.student_number, m.name, m.phone_number, m.email,
+            query = """SELECT m.student_number, m.name, m.username, m.phone_number, m.email,
                              f.fee_id, f.amount, f.due_date,
                              DATEDIFF(CURRENT_DATE, f.due_date) as days_overdue
                       FROM member m
@@ -155,12 +156,12 @@ class AdvancedReports:
             results = self.db.cursor.fetchall()
             
             if results:
-                headers = ["Student No.", "Name", "Phone", "Email", "Fee ID", 
+                headers = ["Student No.", "Name", "Username", "Phone", "Email", "Fee ID", 
                           "Amount", "Due Date", "Days Overdue"]
                 print(f"\nMembers with Unpaid Fees - Year {year}, Semester {semester}:")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
                 
-                total_unpaid = sum(row[5] for row in results)
+                total_unpaid = sum(row[6] for row in results)
                 print(f"\nSummary:")
                 print(f"Total members with unpaid fees: {len(results)}")
                 print(f"Total unpaid amount: ₱{total_unpaid:.2f}")
@@ -177,9 +178,8 @@ class AdvancedReports:
         print("\n=== Member's Unpaid Fees (All Organizations) ===")
         try:
             student_number = int(input("Student Number: "))
-            
-            # Get member name for display
-            self.db.cursor.execute("SELECT name FROM member WHERE student_number = %s", (student_number,))
+              # Get member name for display
+            self.db.cursor.execute("SELECT name, username FROM member WHERE student_number = %s", (student_number,))
             member_result = self.db.cursor.fetchone()
             
             if not member_result:
@@ -200,7 +200,7 @@ class AdvancedReports:
             if results:
                 headers = ["Organization", "Fee ID", "Year", "Semester", 
                           "Amount", "Due Date", "Days Overdue"]
-                print(f"\nUnpaid Fees for {member_result[0]} (Student No. {student_number}):")
+                print(f"\nUnpaid Fees for {member_result[0]} (@{member_result[1]}) (Student No. {student_number}):")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
                 
                 total_debt = sum(row[4] for row in results)
@@ -239,8 +239,7 @@ class AdvancedReports:
             
             # Create placeholders for IN clause
             role_placeholders = ','.join(['%s'] * len(executive_roles))
-            
-            query = f"""SELECT m.student_number, m.name, m.phone_number, m.email,
+            query = f"""SELECT m.student_number, m.name, m.username, m.phone_number, m.email,
                               j.role, j.committee, j.semester
                        FROM member m
                        JOIN joins j ON m.student_number = j.student_number
@@ -263,7 +262,7 @@ class AdvancedReports:
             results = self.db.cursor.fetchall()
             
             if results:
-                headers = ["Student No.", "Name", "Phone", "Email", "Role", "Committee", "Semester"]
+                headers = ["Student No.", "Name", "Username", "Phone", "Email", "Role", "Committee", "Semester"]
                 print(f"\nExecutive Committee Members for Year {year}:")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
                 print(f"\nTotal executive members: {len(results)}")
@@ -289,8 +288,7 @@ class AdvancedReports:
             
             org_id = int(input("Organization ID: "))
             role = input("Role to search (e.g., President, Secretary): ")
-            
-            query = """SELECT j.year, j.semester, m.student_number, m.name, 
+            query = """SELECT j.year, j.semester, m.student_number, m.name, m.username,
                              m.phone_number, j.committee
                       FROM member m
                       JOIN joins j ON m.student_number = j.student_number
@@ -301,7 +299,7 @@ class AdvancedReports:
             results = self.db.cursor.fetchall()
             
             if results:
-                headers = ["Year", "Semester", "Student No.", "Name", "Phone", "Committee"]
+                headers = ["Year", "Semester", "Student No.", "Name", "Username", "Phone", "Committee"]
                 print(f"\nHistory of {role} positions (Most Recent First):")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
                 print(f"\nTotal records found: {len(results)}")
@@ -333,8 +331,7 @@ class AdvancedReports:
             org_id = int(input("Organization ID: "))
             year = int(input("Academic Year: "))
             semester = int(input("Semester (1 or 2): "))
-            
-            query = """SELECT m.student_number, m.name, f.fee_id, f.amount,
+            query = """SELECT m.student_number, m.name, m.username, f.fee_id, f.amount,
                              f.due_date, f.date_of_payment,
                              DATEDIFF(f.date_of_payment, f.due_date) as days_late
                       FROM member m
@@ -348,13 +345,13 @@ class AdvancedReports:
             results = self.db.cursor.fetchall()
             
             if results:
-                headers = ["Student No.", "Name", "Fee ID", "Amount", 
+                headers = ["Student No.", "Name", "Username", "Fee ID", "Amount", 
                           "Due Date", "Payment Date", "Days Late"]
                 print(f"\nLate Payments - Year {year}, Semester {semester}:")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
                 
-                total_late_amount = sum(row[3] for row in results)
-                avg_late_days = sum(row[6] for row in results) / len(results)
+                total_late_amount = sum(row[4] for row in results)
+                avg_late_days = sum(row[7] for row in results) / len(results)
                 
                 print(f"\nSummary:")
                 print(f"Total late payments: {len(results)}")
@@ -578,7 +575,7 @@ class AdvancedReports:
             year = int(input("Academic Year: "))
             semester = int(input("Semester (1 or 2): "))
             
-            query = """SELECT m.student_number, m.name, m.phone_number, m.email,
+            query = """SELECT m.student_number, m.name, m.username, m.phone_number, m.email,
                              SUM(f.amount) as total_debt,
                              COUNT(f.fee_id) as unpaid_fees_count,
                              MIN(f.due_date) as earliest_due_date,
@@ -587,35 +584,35 @@ class AdvancedReports:
                       JOIN fee f ON m.student_number = f.student_number
                       WHERE f.org_id = %s AND f.year = %s AND f.semester = %s 
                         AND f.status = 'Unpaid'
-                      GROUP BY m.student_number, m.name, m.phone_number, m.email
+                      GROUP BY m.student_number, m.name, m.username, m.phone_number, m.email
                       ORDER BY total_debt DESC, max_days_overdue DESC"""
             
             self.db.cursor.execute(query, (org_id, year, semester))
             results = self.db.cursor.fetchall()
             
             if results:
-                headers = ["Student No.", "Name", "Phone", "Email", "Total Debt", 
+                headers = ["Student No.", "Name", "Username", "Phone", "Email", "Total Debt", 
                           "Unpaid Fees", "Earliest Due", "Max Days Overdue"]
                 print(f"\nMembers with Highest Debt - Year {year}, Semester {semester}:")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
                 
                 # Highlight the highest debt
-                highest_debt = results[0][4]
-                highest_debt_members = [row for row in results if row[4] == highest_debt]
+                highest_debt = results[0][5]
+                highest_debt_members = [row for row in results if row[5] == highest_debt]
                 
                 print(f"\nHighest Debt Analysis:")
                 print(f"Maximum debt amount: ₱{highest_debt:.2f}")
                 print(f"Number of members with highest debt: {len(highest_debt_members)}")
                 
                 if len(highest_debt_members) == 1:
-                    print(f"Member with highest debt: {highest_debt_members[0][1]} (Student No. {highest_debt_members[0][0]})")
+                    print(f"Member with highest debt: {highest_debt_members[0][1]} (@{highest_debt_members[0][2]}) (Student No. {highest_debt_members[0][0]})")
                 else:
                     print("Members with highest debt:")
                     for member in highest_debt_members:
-                        print(f"  - {member[1]} (Student No. {member[0]})")
+                        print(f"  - {member[1]} (@{member[2]}) (Student No. {member[0]})")
                 
                 # Additional statistics
-                total_system_debt = sum(row[4] for row in results)
+                total_system_debt = sum(row[5] for row in results)
                 print(f"\nAdditional Statistics:")
                 print(f"Total debt in system: ₱{total_system_debt:.2f}")
                 print(f"Average debt per member: ₱{total_system_debt/len(results):.2f}")
@@ -627,3 +624,210 @@ class AdvancedReports:
             print("✗ Invalid input.")
         except Error as e:
             print(f"✗ Error viewing highest debt: {e}")
+    
+    def basic_reports_menu(self):
+        """Basic reports menu for limited access users"""
+        while True:
+            print("\n" + "=" * 60)
+            print("                    BASIC REPORTS")
+            print("=" * 60)
+            print("1. View organization members")
+            print("2. View organization fees summary")
+            print("3. View unpaid fees")
+            print("4. View payment history")
+            print("5. Back to main menu")
+            
+            choice = input("\nEnter your choice (1-5): ")
+            
+            if choice == '1':
+                self.view_own_org_members()
+            elif choice == '2':
+                self.view_own_org_fees_summary()
+            elif choice == '3':
+                self.view_own_org_unpaid_fees()
+            elif choice == '4':
+                self.view_own_org_payment_history()
+            elif choice == '5':
+                break
+            else:
+                print("Invalid choice! Please try again.")
+    
+    def view_own_org_members(self):
+        """View members of current organization (for limited access)"""
+        if self.user_type != "user" or not self.current_org_id:
+            print("✗ This function is only available for organization users.")
+            return
+        
+        try:
+            query = """SELECT m.student_number, m.name, m.username, m.phone_number, m.email,
+                             m.gender, m.batch, m.degprog, j.role, j.status, 
+                             j.committee, j.year, j.semester
+                      FROM member m
+                      JOIN joins j ON m.student_number = j.student_number
+                      WHERE j.org_id = %s
+                      ORDER BY j.year DESC, j.semester DESC, j.role, m.name"""
+            
+            self.db.cursor.execute(query, (self.current_org_id,))
+            results = self.db.cursor.fetchall()
+            
+            if results:
+                headers = ["Student No.", "Name", "Username", "Phone", "Email", "Gender", "Batch", 
+                          "Degree Program", "Role", "Status", "Committee", "Year", "Semester"]
+                print("\nOrganization Members:")
+                print(tabulate(results, headers=headers, tablefmt="grid"))
+                  # Summary
+                total_members = len(results)
+                active_members = sum(1 for row in results if row[9] == 'Active')
+                
+                print(f"\nSummary:")
+                print(f"Total members: {total_members}")
+                print(f"Active members: {active_members}")
+                print(f"Inactive members: {total_members - active_members}")
+            else:
+                print("No members found for your organization!")
+                
+        except Error as e:
+            print(f"✗ Error viewing organization members: {e}")
+    
+    def view_own_org_fees_summary(self):
+        """View fees summary for current organization"""
+        if self.user_type != "user" or not self.current_org_id:
+            print("✗ This function is only available for organization users.")
+            return
+        
+        try:
+            query = """SELECT 
+                         COUNT(*) as total_fees,
+                         SUM(f.amount) as total_amount,
+                         SUM(CASE WHEN f.status = 'Paid' THEN f.amount ELSE 0 END) as paid_amount,
+                         SUM(CASE WHEN f.status = 'Unpaid' THEN f.amount ELSE 0 END) as unpaid_amount,
+                         COUNT(CASE WHEN f.status = 'Paid' THEN 1 END) as paid_count,
+                         COUNT(CASE WHEN f.status = 'Unpaid' THEN 1 END) as unpaid_count
+                      FROM fee f
+                      WHERE f.org_id = %s"""
+            
+            self.db.cursor.execute(query, (self.current_org_id,))
+            result = self.db.cursor.fetchone()
+            
+            if result and result[0] > 0:
+                total_fees, total_amount, paid_amount, unpaid_amount, paid_count, unpaid_count = result
+                collection_rate = (paid_amount / total_amount * 100) if total_amount > 0 else 0
+                
+                print("\nFees Summary for Your Organization:")
+                print("=" * 50)
+                
+                summary_data = [
+                    ["Total Fees", total_fees, f"₱{total_amount:.2f}"],
+                    ["Paid Fees", paid_count, f"₱{paid_amount:.2f}"],
+                    ["Unpaid Fees", unpaid_count, f"₱{unpaid_amount:.2f}"],
+                    ["Collection Rate", f"{collection_rate:.1f}%", ""]
+                ]
+                
+                headers = ["Category", "Count", "Amount"]
+                print(tabulate(summary_data, headers=headers, tablefmt="grid"))
+                
+                # Current organization balance
+                self.db.cursor.execute("SELECT money_balance FROM org WHERE org_id = %s", (self.current_org_id,))
+                balance_result = self.db.cursor.fetchone()
+                if balance_result:
+                    print(f"\nCurrent Organization Balance: ₱{balance_result[0]:.2f}")
+            else:
+                print("No fee records found for your organization!")
+                
+        except Error as e:
+            print(f"✗ Error viewing fees summary: {e}")
+    
+    def view_own_org_unpaid_fees(self):
+        """View unpaid fees for current organization"""
+        if self.user_type != "user" or not self.current_org_id:
+            print("✗ This function is only available for organization users.")
+            return
+        
+        try:
+            query = """SELECT m.name, m.username, f.fee_id, f.amount, f.due_date,
+                             f.year, f.semester,
+                             DATEDIFF(CURRENT_DATE, f.due_date) as days_overdue
+                      FROM fee f
+                      JOIN member m ON f.student_number = m.student_number
+                      WHERE f.org_id = %s AND f.status = 'Unpaid'
+                      ORDER BY f.due_date ASC"""
+            
+            self.db.cursor.execute(query, (self.current_org_id,))
+            results = self.db.cursor.fetchall()
+            
+            if results:
+                headers = ["Student Name", "Username", "Fee ID", "Amount", "Due Date", "Year", "Semester", "Days Overdue"]
+                print("\nUnpaid Fees:")
+                print(tabulate(results, headers=headers, tablefmt="grid"))
+                
+                total_unpaid = sum(row[3] for row in results)
+                overdue_count = sum(1 for row in results if row[7] > 0)
+                
+                print(f"\nSummary:")
+                print(f"Total unpaid fees: {len(results)}")
+                print(f"Total unpaid amount: ₱{total_unpaid:.2f}")
+                print(f"Overdue fees: {overdue_count}")
+            else:
+                print("No unpaid fees found!")
+                
+        except Error as e:
+            print(f"✗ Error viewing unpaid fees: {e}")
+    
+    def view_own_org_payment_history(self):
+        """View payment history for current organization"""
+        if self.user_type != "user" or not self.current_org_id:
+            print("✗ This function is only available for organization users.")
+            return
+        
+        try:
+            print("\nPayment History Options:")
+            print("1. Last 30 days")
+            print("2. Last 90 days")
+            print("3. This year")
+            print("4. All time")
+            
+            choice = input("Choose option (1-4): ")
+            
+            if choice == '1':
+                date_filter = "AND f.date_of_payment >= DATE_SUB(CURRENT_DATE, INTERVAL 30 DAY)"
+                title = "Last 30 Days"
+            elif choice == '2':
+                date_filter = "AND f.date_of_payment >= DATE_SUB(CURRENT_DATE, INTERVAL 90 DAY)"
+                title = "Last 90 Days"
+            elif choice == '3':
+                date_filter = "AND YEAR(f.date_of_payment) = YEAR(CURRENT_DATE)"
+                title = "This Year"
+            elif choice == '4':
+                date_filter = ""
+                title = "All Time"
+            else:
+                print("Invalid choice!")
+                return
+            
+            # Remove username from the query as it doesn't exist in the database
+            query = f"""SELECT m.name, f.fee_id, f.amount, f.due_date, f.date_of_payment,
+                              f.year, f.semester
+                       FROM fee f
+                       JOIN member m ON f.student_number = m.student_number
+                       WHERE f.org_id = %s AND f.status = 'Paid' {date_filter}
+                       ORDER BY f.date_of_payment DESC"""
+            
+            self.db.cursor.execute(query, (self.current_org_id,))
+            results = self.db.cursor.fetchall()
+            
+            if results:
+                # Adjust headers to match the removed username column
+                headers = ["Student Name", "Fee ID", "Amount", "Due Date", "Payment Date", "Year", "Semester"]
+                print(f"\nPayment History - {title}:")
+                print(tabulate(results, headers=headers, tablefmt="grid"))
+                
+                # Adjust index for amount as it's now at position 2 instead of 3
+                total_collected = sum(row[2] for row in results)
+                print(f"\nSummary:")
+                print(f"Total payments: {len(results)}")
+                print(f"Total amount collected: ₱{total_collected:.2f}")
+            else:
+                print(f"No payments found for {title.lower()}!")
+                
+        except Error as e:
+            print(f"✗ Error viewing payment history: {e}")

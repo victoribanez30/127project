@@ -9,32 +9,44 @@ from mysql.connector import Error
 from tabulate import tabulate
 
 class FeesManager:
-    def __init__(self, db_manager):
+    def __init__(self, db_manager, user_type=None, current_org_id=None, current_student_number=None):
         self.db = db_manager
+        self.user_type = user_type
+        self.current_org_id = current_org_id
+        self.current_student_number = current_student_number
     
     def manage_fees(self):
         """Main fees management menu"""
-        print("\n=== Fees Management ===")
-        print("1. Add new fee")
-        print("2. Process payment")
-        print("3. View member fees")
-        print("4. View organization fees")
-        print("5. Generate financial reports")
-        
-        choice = input("Choose option: ")
-        
-        if choice == '1':
-            self.add_fee()
-        elif choice == '2':
-            self.process_payment()
-        elif choice == '3':
-            self.view_member_fees()
-        elif choice == '4':
-            self.view_org_fees()
-        elif choice == '5':
-            self.generate_reports()
-        else:
-            print("Invalid choice!")
+        while True:
+            print("\n" + "=" * 60)
+            print("                FEES MANAGEMENT")
+            print("=" * 60)
+            print("1. View all members with fees (all organizations)")
+            print("2. Add new fee")
+            print("3. Process payment")
+            print("4. View member fees")
+            print("5. View organization fees")
+            print("6. Generate financial reports")
+            print("7. Back to main menu")
+            
+            choice = input("\nEnter your choice (1-7): ")
+            
+            if choice == '1':
+                self.view_all_members_with_fees()
+            elif choice == '2':
+                self.add_fee()
+            elif choice == '3':
+                self.process_payment()
+            elif choice == '4':
+                self.view_member_fees()
+            elif choice == '5':
+                self.view_org_fees()
+            elif choice == '6':
+                self.generate_reports()
+            elif choice == '7':
+                break
+            else:
+                print("Invalid choice! Please try again.")
     
     def add_fee(self):
         """Add a new fee for a member"""
@@ -317,3 +329,131 @@ class FeesManager:
             print("✗ Invalid year or month.")
         except Error as e:
             print(f"✗ Error generating monthly collection report: {e}")
+    
+    def view_all_members_with_fees(self):
+        """View all members with fees regardless of organization"""
+        try:
+            print("\n=== All Members with Fees ===")
+            print("1. View all fees (paid and unpaid)")
+            print("2. View only unpaid fees")
+            print("3. View only paid fees")
+            
+            sub_choice = input("Choose option (1-3): ")
+            
+            if sub_choice == '1':
+                status_filter = ""
+            elif sub_choice == '2':
+                status_filter = "WHERE f.status = 'Unpaid'"
+            elif sub_choice == '3':
+                status_filter = "WHERE f.status = 'Paid'"
+            else:
+                print("Invalid choice!")
+                return
+            
+            query = f"""SELECT m.student_number, m.name, m.phone_number, o.name as organization,
+                              f.fee_id, f.amount, f.due_date, f.date_of_payment, f.status,
+                              f.year, f.semester,
+                              CASE 
+                                WHEN f.status = 'Unpaid' AND f.due_date < CURRENT_DATE 
+                                THEN DATEDIFF(CURRENT_DATE, f.due_date)
+                                ELSE 0 
+                              END as days_overdue
+                       FROM member m
+                       JOIN fee f ON m.student_number = f.student_number
+                       JOIN org o ON f.org_id = o.org_id
+                       {status_filter}
+                       ORDER BY o.name, f.year DESC, f.semester DESC, 
+                                CASE WHEN f.status = 'Unpaid' THEN 0 ELSE 1 END,
+                                f.due_date ASC"""
+            
+            self.db.cursor.execute(query)
+            results = self.db.cursor.fetchall()
+            
+            if results:
+                headers = ["Student No.", "Name", "Phone", "Organization", "Fee ID", 
+                          "Amount", "Due Date", "Payment Date", "Status", "Year", 
+                          "Semester", "Days Overdue"]
+                
+                title = "All Members with Fees"
+                if sub_choice == '2':
+                    title = "All Members with Unpaid Fees"
+                elif sub_choice == '3':
+                    title = "All Members with Paid Fees"
+                
+                print(f"\n{title}:")
+                print(tabulate(results, headers=headers, tablefmt="grid"))
+                
+                # Summary statistics
+                total_amount = sum(row[5] for row in results)
+                paid_amount = sum(row[5] for row in results if row[8] == 'Paid')
+                unpaid_amount = sum(row[5] for row in results if row[8] == 'Unpaid')
+                overdue_count = sum(1 for row in results if row[11] > 0)
+                
+                print(f"\nSummary:")
+                print(f"Total fee records: {len(results)}")
+                print(f"Total amount: ₱{total_amount:.2f}")
+                
+                if sub_choice == '1':
+                    print(f"Paid amount: ₱{paid_amount:.2f}")
+                    print(f"Unpaid amount: ₱{unpaid_amount:.2f}")
+                    print(f"Collection rate: {(paid_amount/total_amount*100):.1f}%" if total_amount > 0 else "Collection rate: 0%")
+                
+                if sub_choice == '1' or sub_choice == '2':
+                    print(f"Overdue fees: {overdue_count}")
+                
+                # Organization breakdown
+                org_summary = {}
+                for row in results:
+                    org = row[3]
+                    if org not in org_summary:
+                        org_summary[org] = {'count': 0, 'amount': 0}
+                    org_summary[org]['count'] += 1
+                    org_summary[org]['amount'] += row[5]
+                
+                print(f"\nBreakdown by Organization:")
+                for org, data in sorted(org_summary.items()):
+                    print(f"  {org}: {data['count']} fees, ₱{data['amount']:.2f}")
+                    
+            else:
+                print("No fee records found!")
+                
+        except Error as e:            print(f"✗ Error viewing members with fees: {e}")
+    
+    def view_my_fees(self):
+        """View fees for the logged-in member"""
+        try:
+            student_number = self.current_student_number
+            if not student_number:
+                print("✗ No student number available!")
+                return
+            
+            query = """SELECT f.fee_id, o.name, f.year, f.semester, f.amount, 
+                             f.due_date, f.date_of_payment, f.status
+                      FROM fee f
+                      JOIN org o ON f.org_id = o.org_id
+                      WHERE f.student_number = %s
+                      ORDER BY f.year DESC, f.semester DESC"""
+            
+            self.db.cursor.execute(query, (student_number,))
+            results = self.db.cursor.fetchall()
+            
+            if results:
+                headers = ["Fee ID", "Organization", "Year", "Semester", "Amount", 
+                          "Due Date", "Payment Date", "Status"]
+                print("\n=== My Fees ===")
+                print(tabulate(results, headers=headers, tablefmt="grid"))
+                
+                # Calculate totals
+                total_amount = sum(row[4] for row in results)
+                paid_amount = sum(row[4] for row in results if row[7] == 'Paid')
+                unpaid_amount = total_amount - paid_amount
+                
+                print(f"\nSummary:")
+                print(f"Total Amount: ₱{total_amount:.2f}")
+                print(f"Paid Amount: ₱{paid_amount:.2f}")
+                print(f"Unpaid Amount: ₱{unpaid_amount:.2f}")
+            else:
+                print("You have no fees recorded.")
+                
+        except Exception as e:
+            print(f"✗ Error viewing fees: {e}")

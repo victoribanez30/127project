@@ -40,6 +40,7 @@ CREATE TABLE member (
     student_number INT(9) PRIMARY KEY,
     phone_number VARCHAR(11) NOT NULL,
     name VARCHAR(55) NOT NULL,
+    username VARCHAR(40) NOT NULL,
     gender VARCHAR(1),
     batch INT(4) NOT NULL,
     degprog VARCHAR(30) NOT NULL,
@@ -78,10 +79,10 @@ CREATE TABLE joins (
 
 -- Insert sample data into tables
 -- Members
-INSERT INTO member (student_number, phone_number, name, gender, batch, degprog, email, password) VALUES
-(202300001, '09123456781', 'Tanya Mabait', 'F', 2023, 'BS Computer Science', 'tanya.mabait@example.com', 'pass123'),
-(202300002, '09123456782', 'Gracy Deneguan', 'F', 2023, 'BS Information Technology', 'gracy.deneguan@example.com', 'pass456'),
-(202300003, '09123456783', 'Victor Napanis', 'M', 2023, 'BS Computer Science', 'victor.napanis@example.com', 'pass789');
+INSERT INTO member (student_number, phone_number, name, username, gender, batch, degprog, email, password) VALUES
+(202300001, '09123456781', 'Tanya Mabait', 'tanya_mabait', 'F', 2023, 'BS Computer Science', 'tanya.mabait@example.com', 'pass123'),
+(202300002, '09123456782', 'Gracy Deneguan', 'gracy_deneguan', 'F', 2023, 'BS Information Technology', 'gracy.deneguan@example.com', 'pass456'),
+(202300003, '09123456783', 'Victor Napanis', 'victor_napanis', 'M', 2023, 'BS Computer Science', 'victor.napanis@example.com', 'pass789');
 
 -- Organizations
 INSERT INTO org (org_id, money_balance, type, name, year_established, username, password) VALUES

@@ -22,10 +22,10 @@ class DatabaseManager:
                 password=password
             )
             self.cursor = self.connection.cursor()
-            print("✓ Successfully connected to the database")
+            print("[SUCCESS] Successfully connected to the database")
             return True
         except Error as e:
-            print(f"✗ Error connecting to database: {e}")
+            print(f"[ERROR] Error connecting to database: {e}")
             return False
     
     def disconnect(self):
