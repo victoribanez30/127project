@@ -1,0 +1,424 @@
+# Fees Management System - Test Input Scenarios
+# This file contains various input scenarios to test the fees management functionality
+
+# ========================================
+# SCENARIO 1: Admin Login and Basic Navigation
+# ========================================
+admin
+admin
+3
+
+# ========================================
+# SCENARIO 2: View All Members with Fees
+# ========================================
+1
+1
+# View all fees (paid and unpaid)
+
+1
+2
+# View only unpaid fees
+
+1
+3
+# View only paid fees
+
+# ========================================
+# SCENARIO 3: Add New Fees
+# ========================================
+2
+# Student exists, is a member
+202300004
+1
+2024
+1
+2024-02-15
+600.00
+yes
+
+2
+# Student exists, not a member of selected org
+202300019
+2
+2024
+1
+2024-02-10
+450.00
+yes
+
+2
+# Non-member fee (org_id = 0)
+202300020
+0
+2024
+1
+2024-03-01
+300.00
+yes
+
+2
+# Invalid student number
+999999999
+# This should show error
+
+2
+# Duplicate fee attempt
+202300001
+1
+2023
+1
+2023-08-15
+500.00
+yes
+# This should show duplicate error
+
+2
+# Valid new fee
+202300021
+1
+2024
+2
+2024-07-15
+550.00
+yes
+
+# ========================================
+# SCENARIO 4: Process Payments
+# ========================================
+3
+1
+yes
+# Pay fee ID 1 (Tanya's ACSS fee)
+
+3
+5
+no
+# Cancel payment for fee ID 5
+
+3
+2
+yes
+# Pay fee ID 2 (Gracy's YSES fee)
+
+3
+999
+# Invalid fee ID
+
+3
+7
+yes
+# Try to pay already paid fee (should show error)
+
+# ========================================
+# SCENARIO 5: View Member Fees
+# ========================================
+4
+202300001
+# View Tanya's fees
+
+4
+202300010
+# View Gio's fees (has paid fees)
+
+4
+202300019
+# View non-member with fees
+
+4
+999999999
+# Invalid student number
+
+# ========================================
+# SCENARIO 6: View Organization Fees
+# ========================================
+5
+1
+# View ACSS fees
+
+5
+2
+# View YSES fees
+
+5
+999
+# Invalid org ID
+
+# ========================================
+# SCENARIO 7: Generate Reports
+# ========================================
+6
+1
+# Organization balance summary
+
+6
+2
+# Payment status report
+
+6
+3
+# Outstanding fees report
+
+6
+4
+2023
+8
+# Monthly collection report for August 2023
+
+6
+4
+2024
+1
+# Monthly collection report for January 2024 (should be empty)
+
+# ========================================
+# SCENARIO 8: More Add Fee Tests
+# ========================================
+2
+# Test with different amounts and dates
+202300022
+1
+2024
+1
+2024-01-30
+750.00
+yes
+
+2
+# Test edge case - amount validation
+202300023
+2
+2024
+1
+2024-02-28
+0
+# Should show error for zero amount
+
+2
+# Test edge case - invalid date format
+202300023
+2
+2024
+1
+2024-13-01
+400.00
+# Should show error for invalid date
+
+2
+# Test valid fee after corrections
+202300023
+2
+2024
+1
+2024-02-28
+400.00
+yes
+
+# ========================================
+# SCENARIO 9: Additional Payment Processing
+# ========================================
+3
+4
+yes
+# Pay Alex's fee
+
+3
+6
+yes
+# Pay Carlos's fee
+
+3
+8
+yes
+# Pay Enzo's fee
+
+# ========================================
+# SCENARIO 10: Final Reports After Payments
+# ========================================
+6
+1
+# Final organization balance summary
+
+6
+2
+# Final payment status report
+
+6
+3
+# Final outstanding fees report
+
+# ========================================
+# SCENARIO 11: View Updated Fee Status
+# ========================================
+1
+2
+# View remaining unpaid fees
+
+4
+202300001
+# Check Tanya's updated fee status
+
+5
+1
+# Check ACSS updated fee status
+
+# ========================================
+# SCENARIO 12: Add Fees for New Academic Period
+# ========================================
+2
+# Add 2024 semester 2 fees
+202300001
+1
+2024
+2
+2024-08-15
+600.00
+yes
+
+2
+202300002
+2
+2024
+2
+2024-08-10
+450.00
+yes
+
+2
+202300003
+1
+2024
+2
+2024-08-15
+600.00
+yes
+
+# ========================================
+# SCENARIO 13: Bulk Payment Processing
+# ========================================
+3
+# Process several payments
+# (Note: fee IDs will increment based on previous additions)
+# These are estimated IDs - adjust based on actual IDs generated
+
+# Check current unpaid fees first
+1
+2
+
+# Then process payments for some of them
+3
+# Enter appropriate fee ID based on display
+# yes
+
+# ========================================
+# SCENARIO 14: Year-End Financial Report
+# ========================================
+6
+4
+2024
+8
+# August 2024 collections
+
+6
+4
+2024
+2
+# February 2024 collections
+
+6
+1
+# Final balance check
+
+# ========================================
+# SCENARIO 15: Error Handling Tests
+# ========================================
+2
+# Test various invalid inputs
+abc
+# Invalid student number
+
+2
+202300001
+abc
+# Invalid org ID
+
+2
+202300001
+1
+abc
+# Invalid year
+
+2
+202300001
+1
+2024
+abc
+# Invalid semester
+
+2
+202300001
+1
+2024
+1
+invalid-date
+# Invalid date format
+
+2
+202300001
+1
+2024
+1
+2024-02-15
+abc
+# Invalid amount
+
+3
+abc
+# Invalid fee ID for payment
+
+4
+abc
+# Invalid student number for viewing fees
+
+5
+abc
+# Invalid org ID for viewing org fees
+
+6
+4
+abc
+1
+# Invalid year for monthly report
+
+6
+4
+2024
+abc
+# Invalid month for monthly report
+
+# ========================================
+# SCENARIO 16: Exit System
+# ========================================
+7
+# Back to main menu
+
+# ========================================
+# END OF TEST SCENARIOS
+# ========================================
+
+# Additional Notes:
+# - Some fee IDs in payment scenarios may need adjustment based on actual database state
+# - Test with both valid and invalid inputs to verify error handling
+# - Monitor database balance updates after payments
+# - Check that triggers are working correctly for balance updates
+# - Verify that duplicate fees are properly prevented
+# - Test date validations and business logic constraints
+
+# Expected Behaviors:
+# 1. Fee creation should validate student existence and organization validity
+# 2. Payments should update organization balances automatically via triggers
+# 3. Reports should show accurate financial summaries
+# 4. Error handling should provide clear feedback for invalid inputs
+# 5. Member vs non-member fee handling should work correctly
+# 6. Date validations should prevent invalid due dates
+# 7. Amount validations should prevent zero or negative amounts
+# 8. Duplicate fee prevention should work for same student/org/period combinations
