@@ -2,22 +2,14 @@
 """
 Organization Management System
 Terminal-based application for managing memberships and fees
-
-Refactored version with modular structure:
-- database_manager.py: Database connection management
-- member_manage.py: Member and membership management
-- org_manage.py: Organization management
-- fees_manage.py: Fee and payment management
-- advanced_reports.py: Advanced reporting features
 """
 
 import sys
 from database_manager import DatabaseManager
 from member_manage import MembershipManager
-from org_manage import OrganizationManager
 from fees_manage import FeesManager
 from advanced_reports import AdvancedReports
-
+from org_manage import OrganizationManager
 
 class OrganizationManagementSystem:
     def __init__(self):
@@ -144,7 +136,6 @@ class OrganizationManagementSystem:
             print(f"An unexpected error occurred: {e}")
             self.db_manager.disconnect()
             sys.exit(1)
-
 
 if __name__ == "__main__":
     app = OrganizationManagementSystem()
