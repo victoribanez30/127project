@@ -155,9 +155,9 @@ class OrganizationManagementSystem:
                     self.organization_manager.view_own_organization()
                 else:  # member
                     self.membership_manager.view_my_information()
-            elif choice == '2':
+            elif choice == '2':                
                 if self.user_type == "admin":
-                    self.membership_menu()                
+                    self.membership_menu()
                 elif self.user_type == "organization":
                     self.membership_manager.view_org_members()
                 else:  # member
@@ -166,7 +166,7 @@ class OrganizationManagementSystem:
                 if self.user_type == "admin":
                     self.fees_manager.manage_fees()
                 elif self.user_type == "organization":
-                    self.fees_manager.view_organization_fees()
+                    self.fees_manager.view_org_fees()
                 else:  # member
                     self.membership_manager.view_my_organizations()
             elif choice == '4':
