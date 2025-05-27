@@ -48,130 +48,120 @@ class FeesManager:
             else:
                 print("Invalid choice! Please try again.")
     
-    def add_fee(self):
-        """Add a new fee for a member with proper validation"""
+   def add_fee(self):
+        """Add a new fee for a member or non-member with proper validation"""
         try:
             student_number = int(input("Student Number: "))
-            
-            # First, check if the student exists
+
+            # Check student existence
             student_check_query = "SELECT student_number, name FROM member WHERE student_number = %s"
             self.db.cursor.execute(student_check_query, (student_number,))
             student_result = self.db.cursor.fetchone()
-            
+
             if not student_result:
-                print(f"✗ Error: Student with number {student_number} does not exist!")
-                print("Please check the student number or add the student to the system first.")
+                print(f"✗ Error: Student {student_number} does not exist!")
                 return
-            
+
             print(f"✓ Student found: {student_result[1]}")
-            
-            # Show available organizations
+
+            # Show available organizations + Non-member option
             self.db.cursor.execute("SELECT org_id, name FROM org")
             orgs = self.db.cursor.fetchall()
-            
+
             if not orgs:
                 print("✗ No organizations found in the system!")
                 return
-            
+
             print("\nAvailable Organizations:")
             for org in orgs:
                 print(f"{org[0]}. {org[1]}")
-            
-            org_id = int(input("Organization ID: "))
-            
-            # Validate organization exists
-            org_check_query = "SELECT org_id, name FROM org WHERE org_id = %s"
-            self.db.cursor.execute(org_check_query, (org_id,))
-            org_result = self.db.cursor.fetchone()
-            
-            if not org_result:
-                print(f"✗ Error: Organization with ID {org_id} does not exist!")
-                return
-            
-            print(f"✓ Organization found: {org_result[1]}")
-            
-            # Check if student is a member of this organization
-            membership_check_query = """SELECT * FROM joins
-                            WHERE student_number = %s AND org_id = %s"""
+            non_member_id = 0
+            print(f"{non_member_id}. [Add fee as Non-member]")
 
-            self.db.cursor.execute(membership_check_query, (student_number, org_id))
-            membership_result = self.db.cursor.fetchone()
-            
-            if not membership_result:
-                print(f"✗ Warning: Student {student_number} is not a member of {org_result[1]}!")
-                confirm = input("Do you want to add a fee for a non-member? (yes/no): ")
-                if confirm.lower() != 'yes':
-                    print("Fee creation cancelled.")
-                    return
+            org_id = int(input("Organization ID: "))
+
+            if org_id == non_member_id:
+                org_name = "Non-member"
+                is_member = False
             else:
-                print("✓ Student is a member of this organization.")
-            
-            # Check for duplicate fees (same student, org, year, semester)
-            duplicate_check_query = """SELECT fee_id FROM fee 
-                                    WHERE student_number = %s AND org_id = %s 
-                                    AND year = %s AND semester = %s"""
-            
+                # Validate org exists
+                self.db.cursor.execute("SELECT name FROM org WHERE org_id = %s", (org_id,))
+                org_result = self.db.cursor.fetchone()
+                if not org_result:
+                    print(f"✗ Error: Organization ID {org_id} not found.")
+                    return
+
+                org_name = org_result[0]
+                print(f"✓ Organization found: {org_name}")
+
+                # Check membership
+                membership_check_query = "SELECT * FROM joins WHERE student_number = %s AND org_id = %s"
+                self.db.cursor.execute(membership_check_query, (student_number, org_id))
+                is_member = self.db.cursor.fetchone() is not None
+
+                if not is_member:
+                    print(f"✗ Note: Student is not a member of {org_name}. Proceeding as non-member.")
+
+            # Collect fee details
             year = int(input("Year: "))
             semester = int(input("Semester: "))
-            
+
+            # Check for duplicate if necessary (optional - remove or refine)
+            duplicate_check_query = """
+                SELECT fee_id FROM fee 
+                WHERE student_number = %s AND org_id = %s AND year = %s AND semester = %s
+            """
             self.db.cursor.execute(duplicate_check_query, (student_number, org_id, year, semester))
-            duplicate_result = self.db.cursor.fetchone()
-            
-            if duplicate_result:
-                print(f"✗ Error: A fee already exists for this student in {org_result[1]} for {year} semester {semester}!")
-                print(f"Existing fee ID: {duplicate_result[0]}")
+            if self.db.cursor.fetchone():
+                print(f"✗ Error: A fee already exists for this student in {org_name} for {year} semester {semester}!")
                 return
-            
-            # Validate due date format
+
             due_date = input("Due Date (YYYY-MM-DD): ")
+            from datetime import datetime
             try:
-                from datetime import datetime
                 datetime.strptime(due_date, '%Y-%m-%d')
             except ValueError:
-                print("✗ Error: Invalid date format! Please use YYYY-MM-DD format.")
+                print("✗ Error: Invalid date format! Please use YYYY-MM-DD.")
                 return
-            
+
             amount = float(input("Amount: "))
-            
             if amount <= 0:
                 print("✗ Error: Amount must be greater than 0!")
                 return
-            
-            # Display summary for confirmation
+
+            # Confirm fee
             print(f"\n=== Fee Summary ===")
             print(f"Student: {student_result[1]} ({student_number})")
-            print(f"Organization: {org_result[1]}")
+            print(f"Organization: {org_name}")
             print(f"Academic Period: {year} - Semester {semester}")
             print(f"Due Date: {due_date}")
             print(f"Amount: ₱{amount:.2f}")
-            
+
             confirm = input("\nConfirm fee creation? (yes/no): ")
             if confirm.lower() != 'yes':
                 print("Fee creation cancelled.")
                 return
-            
+
             # Insert the fee
-            query = """INSERT INTO fee (student_number, org_id, year, semester, 
-                    due_date, status, amount) VALUES (%s, %s, %s, %s, %s, 'Unpaid', %s)"""
-            values = (student_number, org_id, year, semester, due_date, amount)
-            
-            self.db.cursor.execute(query, values)
+            insert_query = """
+                INSERT INTO fee (student_number, org_id, year, semester, due_date, status, amount)
+                VALUES (%s, %s, %s, %s, %s, 'Unpaid', %s)
+            """
+            self.db.cursor.execute(insert_query, (student_number, org_id, year, semester, due_date, amount))
             self.db.connection.commit()
-            
-            # Get the inserted fee ID
             fee_id = self.db.cursor.lastrowid
+
             print(f"✓ Fee added successfully! Fee ID: {fee_id}")
-            
+
         except ValueError as ve:
-            print(f"✗ Invalid input format: {ve}")
-            print("Please ensure numeric fields contain valid numbers.")
+            print(f"✗ Invalid input: {ve}")
         except Error as e:
-            print(f"✗ Database error adding fee: {e}")
-            # Rollback in case of error
+            print(f"✗ Database error: {e}")
             self.db.connection.rollback()
         except Exception as e:
             print(f"✗ Unexpected error: {e}")
             self.db.connection.rollback()
+
     
     def process_payment(self):
         """Process a fee payment"""
