@@ -22,26 +22,22 @@ class OrganizationManagementSystem:
         self.current_org_id = None
         self.current_username = None
         self.current_student_number = None
-    
     def initialize(self):
         """Initialize the system"""
         print("=" * 60)
         print("    ORGANIZATION MANAGEMENT SYSTEM")
         print("=" * 60)
-        
         if not self.db_manager.connect():
             print("Failed to connect to database. Exiting...")
             sys.exit(1)
-    
+            
     def login(self):
         """Handle user login with authentication"""
         print("\n" + "=" * 60)
         print("                    LOGIN")
         print("=" * 60)
         
-        attempts = 0
-        max_attempts = 3        
-        while attempts < max_attempts:
+        while True:
             username = input("Username: ").strip()
             password = input("Password: ").strip()
             
@@ -91,14 +87,7 @@ class OrganizationManagementSystem:
                 cursor.close()
                 # Username is not a number, so it's not a student number
             
-            attempts += 1
-            remaining = max_attempts - attempts
-            if remaining > 0:
-                print(f"Invalid credentials. {remaining} attempts remaining.")
-            else:
-                print("Too many failed login attempts. Exiting...")
-                
-        return False
+            print("Invalid credentials. Please try again.")
     
     def initialize_managers(self):
         """Initialize all manager classes with user context"""
