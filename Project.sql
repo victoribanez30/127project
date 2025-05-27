@@ -22,6 +22,13 @@ DROP TABLE IF EXISTS joins;
 DROP TABLE IF EXISTS member;
 DROP TABLE IF EXISTS org;
 
+DROP PROCEDURE IF EXISTS pay_fee;
+
+DROP VIEW IF EXISTS user_fees;
+DROP VIEW IF EXISTS user1_fees;
+DROP VIEW IF EXISTS user2_fees;
+DROP VIEW IF EXISTS user3_fees;
+
 
 -- Tables ------------------------------------------------------------------------------------------------
 -- Org Table
@@ -82,7 +89,7 @@ CREATE TABLE joins (
 INSERT INTO member (student_number, phone_number, name, username, gender, batch, degprog, email, password) VALUES
 (202300001, '09123456781', 'Tanya Mabait', 'tanya_mabait', 'F', 2023, 'BS Computer Science', 'tanya.mabait@example.com', 'pass123'),
 (202300002, '09123456782', 'Gracy Deneguan', 'gracy_deneguan', 'F', 2023, 'BS Information Technology', 'gracy.deneguan@example.com', 'pass456'),
-(202300003, '09123456783', 'Victor Napanis', 'victor_napanis', 'M', 2023, 'BS Computer Science', 'victor.napanis@example.com', 'pass789');
+(202300003, '09123456783', 'Victor Napanis', 'victor_napanis', 'M', 2023, 'BS Computer Science', 'victor.napanis@example.com', 'pass789'),
 
 (202300004, '09123456784', 'Alex Rivera', 'alex_riv', 'M', 2023, 'BS Computer Science', 'alex.r@example.com', 'pw1'),
 (202300005, '09123456785', 'Bella Cruz', 'bella_crz', 'F', 2022, 'BS Statistics', 'bella.c@example.com', 'pw2'),
@@ -115,7 +122,7 @@ INSERT INTO org (org_id, money_balance, type, name, year_established, username, 
 INSERT INTO joins (student_number, org_id, year, semester, committee, role, status) VALUES
 (202300001, 1, '2023', 1, 'Events', 'Member', 'Active'),
 (202300002, 2, '2023', 1, 'Finance', 'Member', 'Active'),
-(202300003, 1, '2023', 1, 'Executive', 'Secretary', 'Active');
+(202300003, 1, '2023', 1, 'Executive', 'Secretary', 'Active'),
 
 (202300004, 1, '2023', 2, 'Docs', 'Member', 'Active'),
 (202300005, 2, '2023', 2, 'Finance', 'Treasurer', 'Active'),
@@ -139,7 +146,7 @@ INSERT INTO joins (student_number, org_id, year, semester, committee, role, stat
 INSERT INTO fee (student_number, org_id, year, semester, due_date, date_of_payment, status, amount) VALUES
 (202300001, 1, 2023, 1, '2023-08-15', NULL, 'Unpaid', 500.00),
 (202300002, 2, 2023, 1, '2023-08-10', NULL, 'Unpaid', 400.00),
-(202300003, 1, 2023, 1, '2023-08-15', NULL, 'Unpaid', 500.00);
+(202300003, 1, 2023, 1, '2023-08-15', NULL, 'Unpaid', 500.00),
 
 (202300004, 1, 2023, 2, '2023-11-10', NULL, 'Unpaid', 500.00),
 (202300005, 2, 2023, 2, '2023-11-10', '2023-11-15', 'Paid', 400.00),
