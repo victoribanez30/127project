@@ -651,10 +651,9 @@ class AdvancedReports:
                 break
             else:
                 print("Invalid choice! Please try again.")
-    
     def view_own_org_members(self):
         """View members of current organization (for limited access)"""
-        if self.user_type != "user" or not self.current_org_id:
+        if self.user_type != "organization" or not self.current_org_id:
             print("✗ This function is only available for organization users.")
             return
         
@@ -688,10 +687,9 @@ class AdvancedReports:
                 
         except Error as e:
             print(f"✗ Error viewing organization members: {e}")
-    
     def view_own_org_fees_summary(self):
         """View fees summary for current organization"""
-        if self.user_type != "user" or not self.current_org_id:
+        if self.user_type != "organization" or not self.current_org_id:
             print("✗ This function is only available for organization users.")
             return
         
@@ -736,10 +734,9 @@ class AdvancedReports:
                 
         except Error as e:
             print(f"✗ Error viewing fees summary: {e}")
-    
     def view_own_org_unpaid_fees(self):
         """View unpaid fees for current organization"""
-        if self.user_type != "user" or not self.current_org_id:
+        if self.user_type != "organization" or not self.current_org_id:
             print("✗ This function is only available for organization users.")
             return
         
@@ -772,10 +769,9 @@ class AdvancedReports:
                 
         except Error as e:
             print(f"✗ Error viewing unpaid fees: {e}")
-    
     def view_own_org_payment_history(self):
         """View payment history for current organization"""
-        if self.user_type != "user" or not self.current_org_id:
+        if self.user_type != "organization" or not self.current_org_id:
             print("✗ This function is only available for organization users.")
             return
         
@@ -804,8 +800,7 @@ class AdvancedReports:
                 print("Invalid choice!")
                 return
             
-            # Remove username from the query as it doesn't exist in the database
-            query = f"""SELECT m.name, f.fee_id, f.amount, f.due_date, f.date_of_payment,
+            query = f"""SELECT m.name, m.username, f.fee_id, f.amount, f.due_date, f.date_of_payment,
                               f.year, f.semester
                        FROM fee f
                        JOIN member m ON f.student_number = m.student_number
@@ -816,13 +811,11 @@ class AdvancedReports:
             results = self.db.cursor.fetchall()
             
             if results:
-                # Adjust headers to match the removed username column
-                headers = ["Student Name", "Fee ID", "Amount", "Due Date", "Payment Date", "Year", "Semester"]
+                headers = ["Student Name", "Username", "Fee ID", "Amount", "Due Date", "Payment Date", "Year", "Semester"]
                 print(f"\nPayment History - {title}:")
                 print(tabulate(results, headers=headers, tablefmt="grid"))
                 
-                # Adjust index for amount as it's now at position 2 instead of 3
-                total_collected = sum(row[2] for row in results)
+                total_collected = sum(row[3] for row in results)
                 print(f"\nSummary:")
                 print(f"Total payments: {len(results)}")
                 print(f"Total amount collected: ₱{total_collected:.2f}")

@@ -64,8 +64,25 @@ class OrganizationManagementSystem:
                 self.current_username = org_result[1]
                 print(f"\nWelcome, {org_result[1]}! You have access to your organization data.")
                 return True
+              # Check member credentials (using username or student number)
+            # First try with username
+            cursor.execute("""
+                SELECT student_number, name FROM member 
+                WHERE username = %s AND password = %s
+            """, (username, password))
             
-            # Check member credentials (using student number as username)
+            member_result = cursor.fetchone()
+            
+            if member_result:
+                cursor.close()
+                self.user_type = "member"
+                self.current_org_id = None
+                self.current_username = member_result[1]
+                self.current_student_number = member_result[0]
+                print(f"\nWelcome, {member_result[1]}! You have member access.")
+                return True
+            
+            # If username login failed, try with student number (for backward compatibility)
             try:
                 student_number = int(username)
                 cursor.execute("""
@@ -74,9 +91,9 @@ class OrganizationManagementSystem:
                 """, (student_number, password))
                 
                 member_result = cursor.fetchone()
-                cursor.close()
                 
                 if member_result:
+                    cursor.close()
                     self.user_type = "member"
                     self.current_org_id = None
                     self.current_username = member_result[1]
@@ -84,8 +101,10 @@ class OrganizationManagementSystem:
                     print(f"\nWelcome, {member_result[1]}! You have member access.")
                     return True
             except ValueError:
-                cursor.close()
-                # Username is not a number, so it's not a student number
+                # Username is not a number, so skip student number check
+                pass
+            
+            cursor.close()
             
             print("Invalid credentials. Please try again.")
     
