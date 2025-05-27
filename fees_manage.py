@@ -48,7 +48,7 @@ class FeesManager:
             else:
                 print("Invalid choice! Please try again.")
     
-   def add_fee(self):
+    def add_fee(self):
         """Add a new fee for a member or non-member with proper validation"""
         try:
             student_number = int(input("Student Number: "))
